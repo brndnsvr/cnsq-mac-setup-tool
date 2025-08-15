@@ -1,0 +1,29 @@
+# local only
+netops-setup-requirements.md
+
+# SECURITY: Never commit credentials
+local-env.zsh
+local-env*.zsh
+*.env
+.env
+*-credentials*
+*-secrets*
+*_PASSWORD*
+*_TOKEN*
+*_KEY*
+*_PASS*
+*.pem
+*.key
+*.cert
+
+# Backup files
+*.backup
+*.bak
+*~
+.DS_Store
+
+# Personal configs that shouldn't be shared
+.zshrc.local
+.env.local
+my-*
+personal-*
