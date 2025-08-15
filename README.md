@@ -34,7 +34,7 @@ brew install --cask iterm2
 
 **6. Clone this repository and run setup**
 ```bash
-git clone https://github.com/brndnsvr/mac-setup-tool.git
+git clone https://github.com/brndnsvr/cnsq-mac-setup-tool.git
 cd mac-setup-tool
 chmod +x setup.sh
 ./setup.sh
