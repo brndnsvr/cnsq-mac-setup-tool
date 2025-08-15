@@ -617,39 +617,42 @@ configure_shell() {
     
     if [[ "$DRY_RUN" == true ]]; then
         log INFO "[DRY RUN] Would configure shell environment"
-        log INFO "[DRY RUN] Would backup and modify ~/.zshrc"
+        log INFO "[DRY RUN] Would backup and append to ~/.zshrc"
         log INFO "[DRY RUN] Would create ~/.zsh/ directory with custom configs"
         return 0
     fi
     
-    # Backup existing configs
+    # Backup existing .zshrc if it exists
     if [[ -f "$HOME/.zshrc" ]]; then
         mkdir -p "$BACKUP_DIR"
         cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc.backup"
-        log INFO "Backed up existing .zshrc"
+        log INFO "Backed up existing .zshrc to $BACKUP_DIR"
     fi
     
-    # Create .zsh directory
+    # Create .zsh directory for modular configs
     mkdir -p "$HOME/.zsh"
     
-    # Create main configuration
-    cat > "$HOME/.zshrc.cnsq" << 'EOF'
+    # Create CNSQ configuration file (always in separate file)
+    cat > "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
 # CNSQ NetOps Shell Configuration
+# This file is managed by the CNSQ setup script
 
-# Homebrew
+# Homebrew configuration
 EOF
-    echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\"" >> "$HOME/.zshrc.cnsq"
+    echo "eval \"\$($HOMEBREW_PREFIX/bin/brew shellenv)\" 2>/dev/null || true" >> "$HOME/.zsh/cnsq-config.zsh"
     
     if [[ "$USE_VENV" == true ]]; then
-        cat >> "$HOME/.zshrc.cnsq" << 'EOF'
+        cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
 
-# Python virtual environment
+# Python virtual environment aliases
 alias cnsq-env='source $HOME/.cnsq-venv/bin/activate'
 alias cnsq-python='source $HOME/.cnsq-venv/bin/activate && python'
 EOF
     fi
     
-    cat >> "$HOME/.zshrc.cnsq" << 'EOF'
+    # Only add history config if not already present in .zshrc
+    if ! grep -q "HISTSIZE" "$HOME/.zshrc" 2>/dev/null; then
+        cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
 
 # History configuration
 export HISTSIZE=10000
@@ -658,18 +661,27 @@ setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
 setopt EXTENDED_HISTORY
 export HISTFILE=~/.zsh_history
+EOF
+    fi
+    
+    # Add loader for .zsh directory files
+    cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
 
-# Load custom configurations
+# Load other zsh configurations
 for config in $HOME/.zsh/*.zsh(N); do
-  source "$config"
+    # Skip self to avoid recursion
+    [[ "$config" == "$HOME/.zsh/cnsq-config.zsh" ]] && continue
+    source "$config"
 done
 
-# iTerm2 integration
+# iTerm2 integration (if available)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 EOF
     
-    # Create aliases file
-    cat > "$HOME/.zsh/aliases.zsh" << 'EOF'
+    # Create aliases file (only if it doesn't exist)
+    if [[ ! -f "$HOME/.zsh/aliases.zsh" ]]; then
+        log INFO "Creating aliases file"
+        cat > "$HOME/.zsh/aliases.zsh" << 'EOF'
 # CNSQ NetOps Aliases
 
 # Safety nets
@@ -700,10 +712,15 @@ alias tree='eza --tree --icons'
 alias vi='nvim'
 alias vim='nvim'
 EOF
+        fi
+    else
+        log INFO "Aliases file already exists, preserving user customizations"
     fi
     
-    # Create functions file
-    cat > "$HOME/.zsh/functions.zsh" << 'EOF'
+    # Create functions file (only if it doesn't exist)
+    if [[ ! -f "$HOME/.zsh/functions.zsh" ]]; then
+        log INFO "Creating functions file"
+        cat > "$HOME/.zsh/functions.zsh" << 'EOF'
 # CNSQ NetOps Functions
 
 # Weather lookup
@@ -789,10 +806,15 @@ extract() {
   fi
 }
 EOF
+    else
+        log INFO "Functions file already exists, preserving user customizations"
+    fi
     
-    # Configure Neovim
-    mkdir -p "$HOME/.config/nvim"
-    cat > "$HOME/.config/nvim/init.vim" << 'EOF'
+    # Configure Neovim (only if config doesn't exist)
+    if [[ ! -f "$HOME/.config/nvim/init.vim" ]]; then
+        log INFO "Creating Neovim configuration"
+        mkdir -p "$HOME/.config/nvim"
+        cat > "$HOME/.config/nvim/init.vim" << 'EOF'
 " CNSQ NetOps Neovim Configuration
 set number
 set relativenumber
@@ -804,16 +826,31 @@ set smartindent
 set clipboard=
 set mouse=
 EOF
-    
-    # Integrate with existing .zshrc
-    if [[ -f "$HOME/.zshrc" ]]; then
-        if ! grep -q "CNSQ NetOps Setup" "$HOME/.zshrc"; then
-            echo "" >> "$HOME/.zshrc"
-            echo "# CNSQ NetOps Setup" >> "$HOME/.zshrc"
-            echo "source $HOME/.zshrc.cnsq" >> "$HOME/.zshrc"
-        fi
     else
-        mv "$HOME/.zshrc.cnsq" "$HOME/.zshrc"
+        log INFO "Neovim config already exists, preserving user customizations"
+    fi
+    
+    # Add CNSQ config to .zshrc (append only, never overwrite)
+    # Check if we need to add our configuration to .zshrc
+    if ! grep -q "source.*cnsq-config.zsh" "$HOME/.zshrc" 2>/dev/null; then
+        log INFO "Adding CNSQ configuration to .zshrc"
+        
+        # Create .zshrc if it doesn't exist
+        if [[ ! -f "$HOME/.zshrc" ]]; then
+            echo "# Zsh configuration file" > "$HOME/.zshrc"
+            echo "" >> "$HOME/.zshrc"
+        fi
+        
+        # Append our configuration source line
+        cat >> "$HOME/.zshrc" << 'EOF'
+
+# CNSQ NetOps Setup - Added by setup script
+# Source CNSQ configurations if they exist
+[[ -f "$HOME/.zsh/cnsq-config.zsh" ]] && source "$HOME/.zsh/cnsq-config.zsh"
+EOF
+        log SUCCESS "Added CNSQ configuration to .zshrc"
+    else
+        log INFO "CNSQ configuration already present in .zshrc"
     fi
     
     save_state "SHELL" "COMPLETE"
