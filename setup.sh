@@ -664,15 +664,8 @@ export HISTFILE=~/.zsh_history
 EOF
     fi
     
-    # Add loader for .zsh directory files
+    # Add iTerm2 integration check
     cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
-
-# Load other zsh configurations
-for config in $HOME/.zsh/*.zsh(N); do
-    # Skip self to avoid recursion
-    [[ "$config" == "$HOME/.zsh/cnsq-config.zsh" ]] && continue
-    source "$config"
-done
 
 # iTerm2 integration (if available)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
@@ -830,10 +823,10 @@ EOF
         log INFO "Neovim config already exists, preserving user customizations"
     fi
     
-    # Add CNSQ config to .zshrc (append only, never overwrite)
-    # Check if we need to add our configuration to .zshrc
-    if ! grep -q "source.*cnsq-config.zsh" "$HOME/.zshrc" 2>/dev/null; then
-        log INFO "Adding CNSQ configuration to .zshrc"
+    # Add .zsh directory loader to .zshrc (append only, never overwrite)
+    # Check if we need to add the .zsh directory loader
+    if ! grep -q "Source custom functions and aliases from ~/.zsh directory" "$HOME/.zshrc" 2>/dev/null; then
+        log INFO "Adding .zsh directory loader to .zshrc"
         
         # Create .zshrc if it doesn't exist
         if [[ ! -f "$HOME/.zshrc" ]]; then
@@ -841,16 +834,19 @@ EOF
             echo "" >> "$HOME/.zshrc"
         fi
         
-        # Append our configuration source line
+        # Append the .zsh directory loader
         cat >> "$HOME/.zshrc" << 'EOF'
 
-# CNSQ NetOps Setup - Added by setup script
-# Source CNSQ configurations if they exist
-[[ -f "$HOME/.zsh/cnsq-config.zsh" ]] && source "$HOME/.zsh/cnsq-config.zsh"
+## Source custom functions and aliases from ~/.zsh directory
+if [ -d "$HOME/.zsh" ]; then
+  for config_file in "$HOME/.zsh/"*.zsh; do
+    source "$config_file"
+  done
+fi
 EOF
-        log SUCCESS "Added CNSQ configuration to .zshrc"
+        log SUCCESS "Added .zsh directory loader to .zshrc"
     else
-        log INFO "CNSQ configuration already present in .zshrc"
+        log INFO ".zsh directory loader already present in .zshrc"
     fi
     
     save_state "SHELL" "COMPLETE"
