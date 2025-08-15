@@ -9,6 +9,59 @@
 
 set -uo pipefail
 
+#############################################################################
+# Sudo Access Check - Verify user has admin privileges before proceeding
+#############################################################################
+
+verify_sudo_access() {
+    local CYAN='\033[0;36m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[1;33m'
+    local RED='\033[0;31m'
+    local NC='\033[0m'
+    local BOLD='\033[1m'
+    
+    echo -e "${CYAN}==>${NC} ${BOLD}Checking administrator privileges...${NC}"
+    
+    # Check if user is in admin group
+    if ! groups | grep -q admin; then
+        echo -e "${RED}[ERROR]${NC} You are not in the admin group."
+        echo "This script requires administrator privileges."
+        echo "Please contact your system administrator."
+        exit 1
+    fi
+    
+    # Test if we already have sudo access
+    if sudo -n true 2>/dev/null; then
+        echo -e "${GREEN}[✓]${NC} Administrator access confirmed (cached)"
+        return 0
+    fi
+    
+    # Inform user why we need sudo
+    echo -e "${YELLOW}[INFO]${NC} This script needs administrator access to:"
+    echo "  • Install Xcode Command Line Tools (if needed)"
+    echo "  • Install and configure Homebrew"
+    echo "  • Install system packages and applications"
+    echo ""
+    
+    # Prompt for password
+    echo "Please enter your password when prompted:"
+    if ! sudo -v; then
+        echo -e "${RED}[ERROR]${NC} Failed to authenticate."
+        echo "Please ensure you have the correct password and try again."
+        exit 1
+    fi
+    
+    # Start background process to keep sudo alive
+    ( while true; do sudo -n true; sleep 50; done ) &
+    SUDO_PID=$!
+    
+    # Store PID for cleanup
+    echo "$SUDO_PID" > /tmp/.cnsq-sudo-pid-$$
+    
+    echo -e "${GREEN}[✓]${NC} Administrator access verified successfully"
+}
+
 # Script version
 SCRIPT_VERSION="4.0.0"
 
@@ -924,6 +977,11 @@ main() {
     # Parse command-line arguments
     parse_arguments "$@"
     
+    # Verify sudo access (skip for dry run or help)
+    if [[ "$DRY_RUN" == false ]]; then
+        verify_sudo_access
+    fi
+    
     # Initialize
     echo "CNSQ NetOps Setup v${SCRIPT_VERSION} - Started at $(date)" > "$LOG_FILE"
     
@@ -982,8 +1040,27 @@ main() {
     log SUCCESS "Setup completed at $(date)"
 }
 
-# Trap interruptions
-trap 'echo -e "\n${YELLOW}Installation interrupted. Run with --help for options.${NC}"; exit 1' INT TERM
+# Cleanup function
+cleanup() {
+    local exit_code=$?
+    
+    # Kill the sudo keepalive process if it exists
+    if [[ -f "/tmp/.cnsq-sudo-pid-$$" ]]; then
+        local pid=$(cat "/tmp/.cnsq-sudo-pid-$$" 2>/dev/null)
+        if [[ -n "$pid" ]]; then
+            kill "$pid" 2>/dev/null || true
+        fi
+        rm -f "/tmp/.cnsq-sudo-pid-$$"
+    fi
+    
+    # Show message if interrupted
+    if [[ $exit_code -ne 0 ]] && [[ $exit_code -ne 130 ]]; then
+        echo -e "\n${YELLOW}Installation interrupted. Run with --help for options.${NC}"
+    fi
+}
+
+# Trap interruptions and exits
+trap cleanup EXIT INT TERM
 
 # Run main function
 main "$@"
