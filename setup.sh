@@ -88,8 +88,8 @@ ${BOLD}EXAMPLES:${NC}
 
 ${BOLD}PACKAGES INSTALLED:${NC}
     ${GREEN}Core:${NC} Homebrew, Git, Neovim, Tmux, Python3, Ansible
-    ${BLUE}Shell:${NC} Zsh, Powerlevel10k, Eza, Ripgrep, Tree
-    ${YELLOW}Optional:${NC} iTerm2, Visual Studio Code, Docker, and more
+    ${BLUE}Shell:${NC} Zsh, Eza, Ripgrep, Tree
+    ${YELLOW}Optional:${NC} iTerm2, Visual Studio Code, Terminal Fonts, and more
 
 ${BOLD}FILES CREATED:${NC}
     • ~/.zshrc (backed up if exists)
@@ -412,6 +412,23 @@ install_packages() {
         "wget"
         "watch"
         "nmap"
+        "gping"
+        "mactop"
+        "ncdu"
+        "pandoc"
+        "ssh-audit"
+        "pwgen"
+        "sipcalc"
+        "ascii-image-converter"
+        "coreutils"
+        "curl"
+        "expect"
+        "fswatch"
+        "httping"
+        "netcat"
+        "telnet"
+        "ssh-copy-id"
+        "mas"
     )
     
     # Combine package lists based on mode
@@ -810,36 +827,73 @@ install_gui_apps() {
     log SUCCESS "GUI applications installation complete"
 }
 
-install_powerlevel10k() {
-    log STEP "Optional: Powerlevel10k Theme"
+install_terminal_fonts() {
+    log STEP "Installing terminal fonts..."
     
-    if [[ "$MODE" == "minimal" ]] || [[ "$DRY_RUN" == true ]]; then
-        [[ "$DRY_RUN" == true ]] && log INFO "[DRY RUN] Would skip Powerlevel10k"
+    if [[ "$MODE" == "minimal" ]] || [[ "$SKIP_OPTIONAL" == true ]]; then
+        log INFO "Skipping terminal fonts (minimal mode or --skip-optional)"
         return 0
     fi
     
-    echo -e "\n${CYAN}Powerlevel10k is a fancy Zsh theme with icons and git status.${NC}"
-    echo "It can make your terminal look nicer but is purely cosmetic."
-    echo -n "Install Powerlevel10k theme? (y/n): "
-    read -r response
-    
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-        if ! brew list powerlevel10k &>/dev/null; then
-            log INFO "Installing Powerlevel10k..."
-            brew install powerlevel10k
-        fi
-        
-        # Add to zshrc
-        echo "" >> "$HOME/.zshrc.cnsq"
-        echo "# Powerlevel10k theme (optional)" >> "$HOME/.zshrc.cnsq"
-        echo "source $HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" >> "$HOME/.zshrc.cnsq"
-        echo "[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh" >> "$HOME/.zshrc.cnsq"
-        
-        log SUCCESS "Powerlevel10k installed - run 'p10k configure' after restarting terminal"
-    else
-        log INFO "Skipping Powerlevel10k theme"
+    if check_state "TERMINAL_FONTS"; then
+        log INFO "Terminal fonts already installed (cached)"
+        return 0
     fi
+    
+    # Popular Nerd Fonts for programming
+    local nerd_fonts=(
+        "font-fira-code-nerd-font:Ligatures and icons"
+        "font-hack-nerd-font:Clean and readable"
+        "font-jetbrains-mono-nerd-font:Excellent for coding"
+        "font-meslo-lg-nerd-font:Popular terminal font"
+        "font-inconsolata-nerd-font:Monospaced clarity"
+    )
+    
+    if [[ "$MODE" == "interactive" ]]; then
+        echo -e "\n${CYAN}Terminal Fonts (Nerd Fonts with icons and ligatures)${NC}"
+        echo "These fonts include programming ligatures and icon support."
+        echo -n "Install terminal fonts? (y/n): "
+        read -r response
+        
+        if [[ "$response" =~ ^[Yy]$ ]]; then
+            echo -e "\n${CYAN}Select fonts to install:${NC}"
+            for font_desc in "${nerd_fonts[@]}"; do
+                IFS=':' read -r font description <<< "$font_desc"
+                echo -n "Install $font ($description)? (y/n): "
+                read -r response
+                if [[ "$response" =~ ^[Yy]$ ]]; then
+                    if [[ "$DRY_RUN" == true ]]; then
+                        log INFO "[DRY RUN] Would install $font"
+                    else
+                        log INFO "Installing $font..."
+                        brew install --cask "$font" || log WARNING "Failed to install $font"
+                    fi
+                fi
+            done
+        fi
+    elif [[ "$MODE" == "auto" ]]; then
+        # Auto mode: install recommended fonts
+        echo -e "\n${CYAN}Installing recommended terminal fonts...${NC}"
+        local recommended_fonts=(
+            "font-fira-code-nerd-font"
+            "font-hack-nerd-font"
+            "font-jetbrains-mono-nerd-font"
+        )
+        
+        if [[ "$DRY_RUN" == true ]]; then
+            log INFO "[DRY RUN] Would install recommended Nerd Fonts"
+        else
+            for font in "${recommended_fonts[@]}"; do
+                log INFO "Installing $font..."
+                brew install --cask "$font" || log WARNING "Failed to install $font"
+            done
+        fi
+    fi
+    
+    save_state "TERMINAL_FONTS" "COMPLETE"
+    log SUCCESS "Terminal fonts installation complete"
 }
+
 
 #############################################################################
 # Summary and Verification
@@ -904,11 +958,11 @@ show_summary() {
     echo -e "${YELLOW}Next Steps:${NC}"
     echo "  1. Restart your terminal or run: source ~/.zshrc"
     
-    [[ "$MODE" != "minimal" ]] && echo "  2. Configure Powerlevel10k: p10k configure"
-    [[ "$USE_VENV" == true ]] && echo "  3. Activate Python environment: cnsq-env"
+    [[ "$USE_VENV" == true ]] && echo "  2. Activate Python environment: cnsq-env"
     
     if [[ -d "/Applications/iTerm.app" ]]; then
-        echo "  4. Open iTerm2 and set as default terminal"
+        echo "  3. Open iTerm2 and set as default terminal"
+        echo "  4. In iTerm2 > Preferences > Profiles > Text, select a Nerd Font"
     fi
     
     echo ""
@@ -969,7 +1023,7 @@ main() {
     setup_ansible
     configure_shell
     install_gui_apps
-    install_powerlevel10k
+    install_terminal_fonts
     
     # Verification and summary
     [[ "$DRY_RUN" == false ]] && verify_installation

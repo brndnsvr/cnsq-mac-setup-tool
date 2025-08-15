@@ -51,6 +51,7 @@ This script automates the installation and configuration of essential tools for 
 - **State management**: Automatic resume on interruption
 - **Dry run mode**: Preview changes before making them
 - **Architecture aware**: Supports both Apple Silicon (M1/M2/M3) and Intel Macs
+- **Terminal fonts**: Includes Nerd Fonts with programming ligatures and icons
 - **Comprehensive logging**: All actions logged to `~/cnsq-setup.log`
 - **Backup system**: Creates backups before modifying existing files
 
@@ -165,19 +166,25 @@ OPTIONS:
 
 ### Shell Enhancements (Auto & Interactive)
 - **Modern CLI**: eza (better ls)
-- **Theme**: Powerlevel10k
 - **Syntax highlighting**: zsh-syntax-highlighting
 - **Auto-suggestions**: zsh-autosuggestions
 
 ### Optional Packages (Auto & Interactive)
-- **Development**: GitHub CLI, lazygit
-- **Monitoring**: htop
-- **Network**: wget, nmap
-- **File watching**: watch
+- **Development**: GitHub CLI, lazygit, pandoc, expect
+- **System Monitoring**: htop, mactop, ncdu, fswatch
+- **Network Tools**: wget, nmap, gping, sipcalc, httping, netcat, telnet, curl
+- **Security**: ssh-audit, pwgen, ssh-copy-id
+- **Core Utilities**: coreutils, watch, mas, ascii-image-converter
 
 ### GUI Applications (Based on Mode)
 - **iTerm2**: Terminal emulator (auto mode)
 - **Visual Studio Code**: Code editor (auto mode)
+
+### Terminal Fonts (Based on Mode)
+- **Auto Mode**: FiraCode, Hack, JetBrains Mono Nerd Fonts (installed automatically)
+- **Interactive Mode**: Choose from 5 Nerd Font options
+- **Features**: Programming ligatures, icons, powerline symbols
+- **Benefits**: Enhanced readability, file type icons, git status symbols
 
 ### Python Environment
 - Installs Python packages globally via pip3
@@ -193,7 +200,6 @@ OPTIONS:
 ### Shell Environment
 
 The script configures Zsh with:
-- PowerLevel10k theme (non-minimal modes)
 - Custom aliases (`ll`, `ls`, `vi` mapped to modern alternatives)
 - Optimized history settings (10,000 entries)
 - Python virtual environment aliases
@@ -231,19 +237,19 @@ After the script completes:
    source ~/.zshrc
    ```
 
-2. **Configure PowerLevel10k** (if installed):
-   ```bash
-   p10k configure
-   ```
-
-3. **Test Python packages**:
+2. **Test Python packages**:
    ```bash
    python3 -c "import netmiko; print('netmiko installed')"
    ansible --version
    ```
 
-4. **Set iTerm2 as default** (if installed):
+3. **Configure terminal font** (if fonts installed):
    - Open iTerm2
+   - Go to: iTerm2 → Settings → Profiles → Text
+   - Select a Nerd Font (e.g., "Hack Nerd Font Mono")
+   - Recommended size: 12-14pt
+
+4. **Set iTerm2 as default** (if installed):
    - Go to: iTerm2 → Make iTerm2 Default Term
 
 5. **Verify installation**:
