@@ -71,12 +71,14 @@ Installed based on user preference or mode settings.
 ## Homebrew Cask (brew --cask)
 
 ### GUI Applications (Optional)
-Only installed in non-minimal modes and when not skipped.
+Installed automatically in non-minimal modes.
 
 | Application | Description | Installation Condition |
 |-------------|-------------|----------------------|
-| `iterm2` | Advanced terminal emulator | Auto mode or user approval |
-| `visual-studio-code` | Source code editor | Auto mode or user approval |
+| `iterm2` | Advanced terminal emulator | Auto/Interactive mode |
+| `visual-studio-code` | Source code editor | Auto/Interactive mode |
+| `appcleaner` | Complete app uninstaller | Auto/Interactive mode |
+| `wireshark` | Network protocol analyzer | Auto/Interactive mode |
 
 ### Terminal Fonts (Optional)
 Nerd Fonts include programming ligatures and icon support for enhanced terminal experience.
@@ -167,20 +169,20 @@ Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 - **Shell Enhancements**: None
 
 ### Auto Mode (Default)
-- **Homebrew**: Core + Shell + Optional packages
+- **Homebrew**: All packages (Core + Shell + Optional) - no prompts
 - **Python**: All packages in venv
 - **Ansible**: All collections
-- **GUI Apps**: iTerm2, VS Code
-- **Terminal Fonts**: FiraCode, Hack, JetBrains Mono (Nerd Fonts)
+- **GUI Apps**: All 4 apps (iTerm2, VS Code, AppCleaner, Wireshark)
+- **Terminal Fonts**: All 5 Nerd Fonts installed automatically
 - **Shell Enhancements**: All
 
 ### Interactive Mode
-- **Homebrew**: Core + User selected packages
-- **Python**: All packages (venv optional)
-- **Ansible**: User selected collections
-- **GUI Apps**: User selected
-- **Terminal Fonts**: User selected from 5 options
-- **Shell Enhancements**: User selected
+- **Homebrew**: All packages installed automatically (same as Auto)
+- **Python**: All packages in venv
+- **Ansible**: All collections
+- **GUI Apps**: All 4 apps installed automatically
+- **Terminal Fonts**: All 5 Nerd Fonts installed automatically
+- **Shell Enhancements**: All
 
 ---
 
@@ -189,11 +191,11 @@ Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 | Category | Required | Optional | Total |
 |----------|----------|----------|-------|
 | Homebrew Packages | 8 | 26 | 34 |
-| Homebrew Cask Apps | 0 | 2 | 2 |
+| Homebrew Cask Apps | 0 | 4 | 4 |
 | Homebrew Cask Fonts | 0 | 5 | 5 |
 | Python Packages | 7 | 0 | 7 |
 | Ansible Collections | 3 | 3 | 6 |
-| **Grand Total** | **18** | **36** | **54** |
+| **Grand Total** | **18** | **38** | **56** |
 
 ---
 

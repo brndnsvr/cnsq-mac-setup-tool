@@ -438,17 +438,9 @@ install_packages() {
         packages_to_install+=("${shell_packages[@]}")
     fi
     
+    # Always install all optional packages unless minimal mode or explicitly skipped
     if [[ "$SKIP_OPTIONAL" != true && "$MODE" != "minimal" ]]; then
-        if [[ "$MODE" == "interactive" ]]; then
-            echo -e "\n${CYAN}Select optional packages to install:${NC}"
-            for pkg in "${optional_packages[@]}"; do
-                echo -n "Install $pkg? (y/n): "
-                read -r response
-                [[ "$response" =~ ^[Yy]$ ]] && packages_to_install+=("$pkg")
-            done
-        else
-            packages_to_install+=("${optional_packages[@]}")
-        fi
+        packages_to_install+=("${optional_packages[@]}")
     fi
     
     # Install packages
@@ -791,36 +783,19 @@ install_gui_apps() {
     local gui_apps=(
         "iterm2:Terminal emulator"
         "visual-studio-code:Code editor"
+        "appcleaner:Application uninstaller"
+        "wireshark:Network protocol analyzer"
     )
     
-    if [[ "$MODE" == "interactive" ]]; then
-        echo -e "\n${CYAN}Select GUI applications to install:${NC}"
+    # Install all GUI apps without prompting
+    if [[ "$DRY_RUN" == true ]]; then
+        log INFO "[DRY RUN] Would install all GUI applications"
+    else
         for app_desc in "${gui_apps[@]}"; do
             IFS=':' read -r app description <<< "$app_desc"
-            echo -n "Install $app ($description)? (y/n): "
-            read -r response
-            if [[ "$response" =~ ^[Yy]$ ]]; then
-                if [[ "$DRY_RUN" == true ]]; then
-                    log INFO "[DRY RUN] Would install $app"
-                else
-                    brew install --cask "$app" || log WARNING "Failed to install $app"
-                fi
-            fi
+            log INFO "Installing $app ($description)..."
+            brew install --cask "$app" || log WARNING "Failed to install $app"
         done
-    elif [[ "$MODE" == "auto" ]]; then
-        # Auto mode: install iTerm2 and VS Code
-        if [[ "$DRY_RUN" == true ]]; then
-            log INFO "[DRY RUN] Would install iTerm2 and VS Code"
-        else
-            if [[ ! -d "/Applications/iTerm.app" ]]; then
-                log INFO "Installing iTerm2..."
-                brew install --cask iterm2 || log WARNING "Failed to install iTerm2"
-            fi
-            if [[ ! -d "/Applications/Visual Studio Code.app" ]]; then
-                log INFO "Installing Visual Studio Code..."
-                brew install --cask visual-studio-code || log WARNING "Failed to install VS Code"
-            fi
-        fi
     fi
     
     save_state "GUI_APPS" "COMPLETE"
@@ -849,45 +824,17 @@ install_terminal_fonts() {
         "font-inconsolata-nerd-font:Monospaced clarity"
     )
     
-    if [[ "$MODE" == "interactive" ]]; then
-        echo -e "\n${CYAN}Terminal Fonts (Nerd Fonts with icons and ligatures)${NC}"
-        echo "These fonts include programming ligatures and icon support."
-        echo -n "Install terminal fonts? (y/n): "
-        read -r response
-        
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            echo -e "\n${CYAN}Select fonts to install:${NC}"
-            for font_desc in "${nerd_fonts[@]}"; do
-                IFS=':' read -r font description <<< "$font_desc"
-                echo -n "Install $font ($description)? (y/n): "
-                read -r response
-                if [[ "$response" =~ ^[Yy]$ ]]; then
-                    if [[ "$DRY_RUN" == true ]]; then
-                        log INFO "[DRY RUN] Would install $font"
-                    else
-                        log INFO "Installing $font..."
-                        brew install --cask "$font" || log WARNING "Failed to install $font"
-                    fi
-                fi
-            done
-        fi
-    elif [[ "$MODE" == "auto" ]]; then
-        # Auto mode: install recommended fonts
-        echo -e "\n${CYAN}Installing recommended terminal fonts...${NC}"
-        local recommended_fonts=(
-            "font-fira-code-nerd-font"
-            "font-hack-nerd-font"
-            "font-jetbrains-mono-nerd-font"
-        )
-        
-        if [[ "$DRY_RUN" == true ]]; then
-            log INFO "[DRY RUN] Would install recommended Nerd Fonts"
-        else
-            for font in "${recommended_fonts[@]}"; do
-                log INFO "Installing $font..."
-                brew install --cask "$font" || log WARNING "Failed to install $font"
-            done
-        fi
+    # Install all Nerd Fonts without prompting
+    echo -e "\n${CYAN}Installing terminal fonts (Nerd Fonts with icons and ligatures)...${NC}"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        log INFO "[DRY RUN] Would install all Nerd Fonts"
+    else
+        for font_desc in "${nerd_fonts[@]}"; do
+            IFS=':' read -r font description <<< "$font_desc"
+            log INFO "Installing $font ($description)..."
+            brew install --cask "$font" || log WARNING "Failed to install $font"
+        done
     fi
     
     save_state "TERMINAL_FONTS" "COMPLETE"

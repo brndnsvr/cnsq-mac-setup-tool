@@ -92,18 +92,19 @@ chmod +x setup.sh
 # or explicitly:
 ./setup.sh --mode auto
 ```
-- Installs core and shell enhancement packages
-- Minimal prompts
-- Smart defaults
-- Includes iTerm2
+- Installs ALL packages automatically (no prompts)
+- Includes all optional utilities
+- Installs all 4 GUI apps (iTerm2, VS Code, AppCleaner, Wireshark)
+- Installs all 5 Nerd Fonts
+- Complete setup without interaction
 
 ### Interactive Mode
 ```bash
 ./setup.sh --mode interactive
 ```
-- Prompts for each optional package
-- Choose GUI applications individually
-- Full control over installation
+- Same as Auto mode (installs everything automatically)
+- No longer prompts for individual packages
+- Complete installation without user interaction
 
 ### Minimal Mode
 ```bash
@@ -176,13 +177,19 @@ OPTIONS:
 - **Security**: ssh-audit, pwgen, ssh-copy-id
 - **Core Utilities**: coreutils, watch, mas, ascii-image-converter
 
-### GUI Applications (Based on Mode)
-- **iTerm2**: Terminal emulator (auto mode)
-- **Visual Studio Code**: Code editor (auto mode)
+### GUI Applications (Non-minimal modes)
+- **iTerm2**: Terminal emulator
+- **Visual Studio Code**: Code editor
+- **AppCleaner**: Complete application uninstaller
+- **Wireshark**: Network protocol analyzer
 
-### Terminal Fonts (Based on Mode)
-- **Auto Mode**: FiraCode, Hack, JetBrains Mono Nerd Fonts (installed automatically)
-- **Interactive Mode**: Choose from 5 Nerd Font options
+### Terminal Fonts (Non-minimal modes)
+All 5 Nerd Fonts are installed automatically:
+- **FiraCode**: Programming ligatures and icons
+- **Hack**: Clean and readable
+- **JetBrains Mono**: Excellent for coding
+- **Meslo LG**: Popular terminal font
+- **Inconsolata**: Monospaced clarity
 - **Features**: Programming ligatures, icons, powerline symbols
 - **Benefits**: Enhanced readability, file type icons, git status symbols
 
