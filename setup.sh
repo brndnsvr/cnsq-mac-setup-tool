@@ -457,31 +457,65 @@ install_packages() {
         "zsh-autosuggestions"
     )
     
-    # Optional packages
+    # Optional packages - Network Operations focused
     local optional_packages=(
+        # Development & Version Control
         "gh"
         "lazygit"
+        
+        # System Monitoring
         "htop"
+        "ncdu"
+        "fswatch"
+        
+        # Core Network Tools
         "wget"
+        "curl"
         "watch"
         "nmap"
-        "gping"
-        "mactop"
-        "ncdu"
-        "pandoc"
-        "ssh-audit"
-        "pwgen"
         "sipcalc"
-        "ascii-image-converter"
-        "coreutils"
-        "curl"
-        "expect"
-        "fswatch"
-        "httping"
         "netcat"
         "telnet"
+        
+        # Network Diagnostics
+        "gping"
+        "mtr"
+        "fping"
+        "iperf3"
+        "socat"
+        "whois"
+        "arp-scan"
+        "ngrep"
+        
+        # DNS Tools
+        "ldns"
+        
+        # SNMP Tools
+        "net-snmp"
+        
+        # Serial/Console Access
+        "minicom"
+        "lrzsz"
+        
+        # Security & SSH
+        "ssh-audit"
         "ssh-copy-id"
+        "pwgen"
+        
+        # File & Archive Tools
+        "p7zip"
+        "unrar"
+        "coreutils"
+        
+        # Automation
+        "expect"
+        
+        # Optional/Nice-to-have
         "mas"
+        "pandoc"
+        "httping"
+        "mactop"
+        "ascii-image-converter"
     )
     
     # Combine package lists based on mode
@@ -521,12 +555,18 @@ setup_python() {
     fi
     
     local python_packages=(
+        # Core packages
         "paramiko"
         "cryptography"
         "pyyaml"
         "jinja2"
         "requests"
         "ansible-core"
+        
+        # Network automation libraries
+        "netmiko"
+        "napalm"
+        "textfsm"
     )
     
     if [[ "$DRY_RUN" == true ]]; then
@@ -654,21 +694,82 @@ EOF
     if ! grep -q "HISTSIZE" "$HOME/.zshrc" 2>/dev/null; then
         cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
 
-# History configuration
-export HISTSIZE=10000
-export SAVEHIST=20000
-setopt INC_APPEND_HISTORY
-setopt SHARE_HISTORY
-setopt EXTENDED_HISTORY
+# Enhanced History Configuration
+export HISTSIZE=50000
+export SAVEHIST=50000
 export HISTFILE=~/.zsh_history
+setopt EXTENDED_HISTORY          # Write the history file in the ':start:elapsed;command' format
+setopt INC_APPEND_HISTORY        # Write to the history file immediately, not when the shell exits
+setopt SHARE_HISTORY             # Share history between all sessions
+setopt HIST_EXPIRE_DUPS_FIRST   # Expire a duplicate event first when trimming history
+setopt HIST_IGNORE_DUPS          # Do not record an event that was just recorded again
+setopt HIST_IGNORE_ALL_DUPS     # Delete an old recorded event if a new event is a duplicate
+setopt HIST_FIND_NO_DUPS        # Do not display a previously found event
+setopt HIST_IGNORE_SPACE        # Do not record an event starting with a space
+setopt HIST_SAVE_NO_DUPS        # Do not write a duplicate event to the history file
+setopt HIST_VERIFY               # Do not execute immediately upon history expansion
 EOF
     fi
     
-    # Add iTerm2 integration check
+    # Add better shell options and integrations
     cat >> "$HOME/.zsh/cnsq-config.zsh" << 'EOF'
+
+# Better Shell Options
+setopt AUTO_CD                   # Auto cd when typing directory name
+setopt AUTO_PUSHD                # Push directories onto stack when cd
+setopt PUSHD_IGNORE_DUPS        # Don't push duplicates
+setopt PUSHD_MINUS              # Exchange + and - for pushd/popd
+setopt INTERACTIVE_COMMENTS     # Allow comments in interactive shell
+setopt NO_BEEP                  # No beeping
+setopt PROMPT_SUBST             # Allow prompt substitution
+setopt CORRECT                  # Try to correct command spelling
+setopt COMPLETE_IN_WORD         # Complete from both ends of word
+setopt PATH_DIRS                # Perform path search even on command names with /
+
+# Better PATH management
+typeset -U path                 # Remove duplicates from PATH
+path=(
+    $HOME/.local/bin(N)
+    $HOME/bin(N)
+    /usr/local/bin
+    /usr/bin
+    /bin
+    /usr/local/sbin
+    /usr/sbin
+    /sbin
+    $path
+)
+
+# Load completions
+if type brew &>/dev/null; then
+    FPATH="$(brew --prefix)/share/zsh-completions:$FPATH"
+    autoload -Uz compinit && compinit
+fi
+
+# Better completion settings
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 
 # iTerm2 integration (if available)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
+
+# Set default editor
+export EDITOR='nvim'
+export VISUAL='nvim'
+
+# Better less options
+export LESS='-R -F -X -i -P ?f%f:stdin. ?lb%lb?L/%L.. [?eEOF:?pb%pb\%..]'
+
+# Colored man pages
+export LESS_TERMCAP_mb=$'\E[1;31m'
+export LESS_TERMCAP_md=$'\E[1;36m'
+export LESS_TERMCAP_me=$'\E[0m'
+export LESS_TERMCAP_so=$'\E[01;33m'
+export LESS_TERMCAP_se=$'\E[0m'
+export LESS_TERMCAP_us=$'\E[1;32m'
+export LESS_TERMCAP_ue=$'\E[0m'
 EOF
     
     # Create aliases file (only if it doesn't exist)
@@ -701,9 +802,56 @@ EOF
 # Modern replacements
 alias ll='eza -lh --git --group-directories-first --icons'
 alias ls='eza --icons'
+alias la='eza -la --icons'
 alias tree='eza --tree --icons'
 alias vi='nvim'
 alias vim='nvim'
+
+# Better grep
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Network shortcuts
+alias ping='ping -c 5'
+alias ping6='ping6 -c 5'
+alias traceroute='traceroute -I'
+alias listening='sudo lsof -iTCP -sTCP:LISTEN -P -n'
+alias openports='sudo lsof -i -P -n | grep LISTEN'
+alias showip='curl -s ifconfig.me'
+
+# Process management
+alias psa='ps aux'
+alias psg='ps aux | grep -v grep | grep'
+alias topmem='ps aux | sort -nrk 4 | head -10'
+alias topcpu='ps aux | sort -nrk 3 | head -10'
+
+# Quick edits
+alias zshrc='${EDITOR:-nvim} ~/.zshrc'
+alias zshenv='${EDITOR:-nvim} ~/.zshenv'
+alias hosts='sudo ${EDITOR:-nvim} /etc/hosts'
+
+# Ansible shortcuts
+alias ap='ansible-playbook'
+alias av='ansible-vault'
+alias ag='ansible-galaxy'
+
+# Docker shortcuts (if installed)
+if command -v docker &>/dev/null; then
+    alias d='docker'
+    alias dc='docker-compose'
+    alias dps='docker ps'
+    alias dpsa='docker ps -a'
+    alias dimg='docker images'
+fi
+
+# Kubernetes shortcuts (if installed)
+if command -v kubectl &>/dev/null; then
+    alias k='kubectl'
+    alias kgp='kubectl get pods'
+    alias kgs='kubectl get services'
+    alias kgn='kubectl get nodes'
+fi
 EOF
         fi
     else
@@ -777,7 +925,7 @@ myip() {
   echo "External: $(curl -s ifconfig.me)"
 }
 
-# Universal archive extractor
+# Universal archive extractor (now with p7zip and unrar support)
 extract() {
   if [ -f "$1" ]; then
     case $1 in
@@ -797,6 +945,108 @@ extract() {
   else
     echo "'$1' is not a valid file"
   fi
+}
+
+# Network connectivity test
+nettest() {
+  echo "Testing network connectivity..."
+  echo -n "Gateway: "
+  ping -c 1 $(route -n get default | grep gateway | awk '{print $2}') &>/dev/null && echo "✓" || echo "✗"
+  echo -n "DNS (8.8.8.8): "
+  ping -c 1 8.8.8.8 &>/dev/null && echo "✓" || echo "✗"
+  echo -n "Internet (google.com): "
+  ping -c 1 google.com &>/dev/null && echo "✓" || echo "✗"
+}
+
+# Quick network interface info
+netinfo() {
+  echo "=== Network Interfaces ==="
+  for interface in $(networksetup -listallhardwareports | grep "Device:" | awk '{print $2}'); do
+    local ip=$(ipconfig getifaddr $interface 2>/dev/null)
+    if [ -n "$ip" ]; then
+      echo "$interface: $ip"
+    fi
+  done
+  echo ""
+  echo "=== Default Gateway ==="
+  route -n get default | grep gateway | awk '{print $2}'
+  echo ""
+  echo "=== DNS Servers ==="
+  scutil --dns | grep "nameserver\[[0-9]*\]" | sort -u | awk '{print $3}'
+}
+
+# SSH to multiple hosts with tmux
+mssh() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: mssh host1 host2 host3..."
+    return 1
+  fi
+  
+  local session="mssh-$$"
+  tmux new-session -d -s "$session" "ssh $1"
+  shift
+  
+  for host in "$@"; do
+    tmux split-window -t "$session" "ssh $host"
+    tmux select-layout -t "$session" tiled
+  done
+  
+  tmux attach-session -t "$session"
+}
+
+# Backup a file with timestamp
+backup() {
+  if [ -f "$1" ]; then
+    cp "$1" "$1.$(date +%Y%m%d-%H%M%S).backup"
+    echo "Backed up $1"
+  else
+    echo "File $1 not found"
+  fi
+}
+
+# Find process using a specific port
+portuser() {
+  if [ -z "$1" ]; then
+    echo "Usage: portuser <port>"
+    return 1
+  fi
+  sudo lsof -i :$1
+}
+
+# Quick DNS lookup with multiple servers
+dnscheck() {
+  if [ -z "$1" ]; then
+    echo "Usage: dnscheck <domain>"
+    return 1
+  fi
+  
+  echo "=== Cloudflare (1.1.1.1) ==="
+  dig @1.1.1.1 +short "$1"
+  echo ""
+  echo "=== Google (8.8.8.8) ==="
+  dig @8.8.8.8 +short "$1"
+  echo ""
+  echo "=== Quad9 (9.9.9.9) ==="
+  dig @9.9.9.9 +short "$1"
+}
+
+# Show network routes
+routes() {
+  echo "=== IPv4 Routes ==="
+  netstat -rn -f inet
+  echo ""
+  echo "=== IPv6 Routes ==="
+  netstat -rn -f inet6
+}
+
+# Test port connectivity
+testport() {
+  if [ $# -ne 2 ]; then
+    echo "Usage: testport <host> <port>"
+    return 1
+  fi
+  
+  nc -zv -w 3 "$1" "$2"
 }
 EOF
     else
@@ -882,6 +1132,11 @@ install_gui_apps() {
             log INFO "Installing $app ($description)..."
             brew install --cask "$app" || log WARNING "Failed to install $app"
         done
+        
+        # Note about Wireshark CLI tools
+        log INFO "Note: Wireshark includes tshark CLI tool. To capture without root:"
+        log INFO "  Run: sudo dseditgroup -o edit -a \$(whoami) -t user access_bpf"
+        log INFO "  Then logout and login again"
     fi
     
     save_state "GUI_APPS" "COMPLETE"

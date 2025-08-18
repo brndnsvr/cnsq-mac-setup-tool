@@ -37,34 +37,88 @@ Installed in non-minimal modes.
 | `zsh-syntax-highlighting` | Syntax highlighting for Zsh | Shell enhancement |
 | `zsh-autosuggestions` | Fish-like autosuggestions | Shell productivity |
 
-### Optional Packages
-Installed based on user preference or mode settings.
+### Optional Packages - Network Operations Focused
+Installed automatically in non-minimal modes (organized by category).
 
+#### Development & Version Control
 | Package | Description | Purpose |
 |---------|-------------|---------|
 | `gh` | GitHub CLI | GitHub operations |
 | `lazygit` | Terminal UI for git | Git management |
+
+#### System Monitoring
+| Package | Description | Purpose |
+|---------|-------------|---------|
 | `htop` | Interactive process viewer | System monitoring |
+| `ncdu` | NCurses disk usage analyzer | Disk space analysis |
+| `fswatch` | File system monitor | Watch file changes |
+
+#### Core Network Tools
+| Package | Description | Purpose |
+|---------|-------------|---------|
 | `wget` | Network downloader | File downloads |
+| `curl` | Data transfer tool | API testing & downloads |
 | `watch` | Command repeater | Command monitoring |
 | `nmap` | Network mapper | Network discovery |
-| `gping` | Ping with graph visualization | Network diagnostics |
-| `mactop` | macOS system monitor | Performance monitoring |
-| `ncdu` | NCurses disk usage analyzer | Disk space analysis |
-| `pandoc` | Universal document converter | Document conversion |
-| `ssh-audit` | SSH configuration auditor | Security auditing |
-| `pwgen` | Password generator | Secure password creation |
 | `sipcalc` | IP subnet calculator | Network planning |
-| `ascii-image-converter` | Convert images to ASCII | Terminal graphics |
-| `coreutils` | GNU core utilities | Enhanced Unix tools |
-| `curl` | Data transfer tool | API testing & downloads |
-| `expect` | Automation tool | Script interactive programs |
-| `fswatch` | File system monitor | Watch file changes |
-| `httping` | HTTP request pinger | Web service monitoring |
 | `netcat` | Network utility | TCP/UDP connections |
 | `telnet` | Telnet client | Legacy device access |
+
+#### Network Diagnostics
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `gping` | Ping with graph visualization | Network diagnostics |
+| `mtr` | Combined ping/traceroute | Path quality analysis |
+| `fping` | Fast multi-host ping | Bulk connectivity testing |
+| `iperf3` | Bandwidth testing tool | Network performance |
+| `socat` | Multipurpose relay | Port forwarding/tunnels |
+| `whois` | Domain/IP lookup | Ownership information |
+| `arp-scan` | Layer 2 discovery | Find hosts on L2 segment |
+| `ngrep` | Network grep | Packet payload search |
+
+#### DNS Tools
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `ldns` | DNS library with drill | Advanced DNS debugging |
+
+#### SNMP Tools
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `net-snmp` | SNMP utilities | Device polling/monitoring |
+
+#### Serial/Console Access
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `minicom` | Serial communication | Router/switch console |
+| `lrzsz` | ZMODEM file transfer | Serial file transfers |
+
+#### Security & SSH
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `ssh-audit` | SSH configuration auditor | Security auditing |
 | `ssh-copy-id` | SSH key installer | Remote key deployment |
+| `pwgen` | Password generator | Secure passwords |
+
+#### File & Archive Tools
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `p7zip` | 7-Zip archiver | Extract .7z files |
+| `unrar` | RAR archive extractor | Extract .rar files |
+| `coreutils` | GNU core utilities | Enhanced Unix tools |
+
+#### Automation
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `expect` | Automation tool | Script interactive programs |
+
+#### Optional/Nice-to-have
+| Package | Description | Purpose |
+|---------|-------------|---------|
 | `mas` | Mac App Store CLI | Automate app installs |
+| `pandoc` | Document converter | Convert file formats |
+| `httping` | HTTP request pinger | Web service monitoring |
+| `mactop` | macOS system monitor | Apple Silicon monitoring |
+| `ascii-image-converter` | Image to ASCII | Terminal graphics |
 
 ---
 
@@ -78,7 +132,13 @@ Installed automatically in non-minimal modes.
 | `iterm2` | Advanced terminal emulator | Auto/Interactive mode |
 | `visual-studio-code` | Source code editor | Auto/Interactive mode |
 | `appcleaner` | Complete app uninstaller | Auto/Interactive mode |
-| `wireshark` | Network protocol analyzer | Auto/Interactive mode |
+| `wireshark` | Network protocol analyzer (includes tshark CLI) | Auto/Interactive mode |
+
+**Note:** Wireshark includes `tshark` for CLI packet capture. To capture without root:
+```bash
+sudo dseditgroup -o edit -a $(whoami) -t user access_bpf
+# Then logout and login again
+```
 
 ### Terminal Fonts (Optional)
 Nerd Fonts include programming ligatures and icon support for enhanced terminal experience.
@@ -114,6 +174,7 @@ In auto mode, these three fonts are installed automatically:
 
 Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 
+### Core Packages
 | Package | Description | Purpose |
 |---------|-------------|---------|
 | `pip` | Package installer (upgraded) | Python package management |
@@ -123,6 +184,13 @@ Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 | `jinja2` | Template engine | Template processing |
 | `requests` | HTTP library | API interactions |
 | `ansible-core` | Ansible core functionality | Automation framework |
+
+### Network Automation Libraries
+| Package | Description | Purpose |
+|---------|-------------|---------|
+| `netmiko` | Multi-vendor SSH library | Network device automation |
+| `napalm` | Network automation abstraction | Unified device management |
+| `textfsm` | Template-based text parser | Parse CLI output |
 
 ---
 
@@ -190,12 +258,12 @@ Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 
 | Category | Required | Optional | Total |
 |----------|----------|----------|-------|
-| Homebrew Packages | 8 | 23 | 31 |
+| Homebrew Packages | 8 | 35 | 43 |
 | Homebrew Cask Apps | 0 | 4 | 4 |
 | Homebrew Cask Fonts | 0 | 5 | 5 |
-| Python Packages | 7 | 0 | 7 |
+| Python Packages | 7 | 3 | 10 |
 | Ansible Collections | 3 | 3 | 6 |
-| **Grand Total** | **18** | **35** | **53** |
+| **Grand Total** | **18** | **50** | **68** |
 
 ---
 
