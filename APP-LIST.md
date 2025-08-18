@@ -190,12 +190,12 @@ Installed via pip in virtual environment (`~/.cnsq-venv`) or globally.
 
 | Category | Required | Optional | Total |
 |----------|----------|----------|-------|
-| Homebrew Packages | 8 | 26 | 34 |
+| Homebrew Packages | 8 | 23 | 31 |
 | Homebrew Cask Apps | 0 | 4 | 4 |
 | Homebrew Cask Fonts | 0 | 5 | 5 |
 | Python Packages | 7 | 0 | 7 |
 | Ansible Collections | 3 | 3 | 6 |
-| **Grand Total** | **18** | **38** | **56** |
+| **Grand Total** | **18** | **35** | **53** |
 
 ---
 
