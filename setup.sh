@@ -94,8 +94,8 @@ check_sudo_active() {
 }
 
 check_dev_tools_installed() {
-    # Check if key development tools are installed
-    command -v git &>/dev/null && command -v nvim &>/dev/null && command -v python3 &>/dev/null
+    # Check if key development tools are installed (including VSCode)
+    command -v git &>/dev/null && command -v nvim &>/dev/null && command -v python3 &>/dev/null && [[ -d "/Applications/Visual Studio Code.app" ]]
 }
 
 check_network_tools_installed() {
@@ -111,11 +111,6 @@ check_utility_tools_installed() {
 check_security_tools_installed() {
     # Check if key security tools are installed
     command -v ssh-audit &>/dev/null && command -v pwgen &>/dev/null
-}
-
-check_vscode_installed() {
-    # Check if Visual Studio Code is installed
-    [[ -d "/Applications/Visual Studio Code.app" ]]
 }
 
 # Initialize completion status based on actual installations
@@ -161,18 +156,17 @@ show_menu() {
     echo ""
     
     # Task definitions
-    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo" "dev_tools" "network_tools" "utility_tools" "security_tools" "vscode")
+    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo" "dev_tools" "network_tools" "utility_tools" "security_tools")
     local task_names=(
         "Install Xcode Command Line Tools"
         "Install Homebrew Package Manager"
         "Configure Homebrew in Shell"
         "Install iTerm2 Terminal"
         "Verify Administrator Access"
-        "Install Development Tools (git, neovim, python, etc.)"
+        "Install Dev Tools (git, neovim, python, VSCode, etc.)"
         "Install Network Tools (nmap, wireshark, mtr, etc.)"
-        "Install Utility Tools (jq, ripgrep, tree, etc.)"
+        "Install Utility Tools (jq, ripgrep, AppCleaner, etc.)"
         "Install Security Tools (ssh-audit, pwgen, etc.)"
-        "Install Visual Studio Code"
     )
     local check_functions=(
         "check_xcode_installed"
@@ -184,7 +178,6 @@ show_menu() {
         "check_network_tools_installed"
         "check_utility_tools_installed"
         "check_security_tools_installed"
-        "check_vscode_installed"
     )
     
     local num=1
@@ -228,7 +221,7 @@ show_menu() {
     echo "  R. Reset All Tasks"
     echo "  Q. Quit"
     echo ""
-    echo -n "Enter your choice (1-10, A, R, or Q): "
+    echo -n "Enter your choice (1-9, A, R, or Q): "
 }
 
 # Verify sudo access
@@ -487,12 +480,39 @@ install_dev_tools() {
         "expect"
     )
     
+    local cask_tools=(
+        "visual-studio-code"
+    )
+    
     local failed_tools=()
     
     for tool in "${tools[@]}"; do
         print_info "Installing $tool..."
         if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
             print_success "$tool installed"
+        else
+            print_warning "$tool may already be installed or failed"
+            failed_tools+=("$tool")
+        fi
+    done
+    
+    # Install cask tools (VSCode)
+    for tool in "${cask_tools[@]}"; do
+        print_info "Installing $tool..."
+        if brew install --cask "$tool" 2>/dev/null || brew upgrade --cask "$tool" 2>/dev/null; then
+            print_success "$tool installed"
+            
+            # Setup VSCode 'code' command if it was just installed
+            if [[ "$tool" == "visual-studio-code" ]] && [[ -d "/Applications/Visual Studio Code.app" ]]; then
+                print_info "Setting up 'code' command in terminal..."
+                local vscode_path="/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+                if ! grep -q "Visual Studio Code" "$HOME/.zshrc" 2>/dev/null; then
+                    echo "" >> "$HOME/.zshrc"
+                    echo "# Visual Studio Code" >> "$HOME/.zshrc"
+                    echo "export PATH=\"\$PATH:$vscode_path\"" >> "$HOME/.zshrc"
+                    print_success "Added 'code' command to PATH"
+                fi
+            fi
         else
             print_warning "$tool may already be installed or failed"
             failed_tools+=("$tool")
@@ -596,8 +616,11 @@ install_utility_tools() {
         "curl"
         "watch"
         "p7zip"
-        "unrar"
         "coreutils"
+    )
+    
+    local cask_tools=(
+        "appcleaner"
     )
     
     local failed_tools=()
@@ -605,6 +628,17 @@ install_utility_tools() {
     for tool in "${tools[@]}"; do
         print_info "Installing $tool..."
         if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
+            print_success "$tool installed"
+        else
+            print_warning "$tool may already be installed or failed"
+            failed_tools+=("$tool")
+        fi
+    done
+    
+    # Install cask tools
+    for tool in "${cask_tools[@]}"; do
+        print_info "Installing $tool..."
+        if brew install --cask "$tool" 2>/dev/null || brew upgrade --cask "$tool" 2>/dev/null; then
             print_success "$tool installed"
         else
             print_warning "$tool may already be installed or failed"
@@ -676,56 +710,6 @@ install_security_tools() {
         print_warning "Some tools may have had issues: ${failed_tools[*]}"
         mark_complete "security_tools"
         return 0
-    fi
-}
-
-# Install Visual Studio Code
-install_vscode() {
-    print_info "Installing Visual Studio Code..."
-    
-    # Check if already installed
-    if check_vscode_installed; then
-        print_success "Visual Studio Code is already installed"
-        mark_complete "vscode"
-        return 0
-    fi
-    
-    # Ensure brew is available
-    if ! command -v brew &>/dev/null; then
-        # Try to source brew if it's installed but not in PATH
-        if [[ -f "/opt/homebrew/bin/brew" ]]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [[ -f "/usr/local/bin/brew" ]]; then
-            eval "$(/usr/local/bin/brew shellenv)"
-        else
-            print_error "Homebrew is not available. Please install Homebrew first."
-            return 1
-        fi
-    fi
-    
-    print_info "Installing Visual Studio Code via Homebrew..."
-    if brew install --cask visual-studio-code; then
-        print_success "Visual Studio Code installed successfully"
-        
-        # Install the 'code' command in PATH if VSCode was just installed
-        if [[ -d "/Applications/Visual Studio Code.app" ]]; then
-            print_info "Setting up 'code' command in terminal..."
-            
-            # Add VSCode to PATH in ~/.zshrc
-            local vscode_path="/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-            if ! grep -q "Visual Studio Code" "$HOME/.zshrc" 2>/dev/null; then
-                echo "" >> "$HOME/.zshrc"
-                echo "# Visual Studio Code" >> "$HOME/.zshrc"
-                echo "export PATH=\"\$PATH:$vscode_path\"" >> "$HOME/.zshrc"
-                print_success "Added 'code' command to PATH"
-            fi
-        fi
-        
-        mark_complete "vscode"
-        return 0
-    else
-        print_error "Failed to install Visual Studio Code"
-        return 1
     fi
 }
 
@@ -806,14 +790,6 @@ run_all_tasks() {
     if ! is_complete "security_tools"; then
         echo ""
         install_security_tools
-        tasks_run=true
-        echo ""
-        read -p "Press Enter to continue..."
-    fi
-    
-    if ! is_complete "vscode"; then
-        echo ""
-        install_vscode
         tasks_run=true
         echo ""
         read -p "Press Enter to continue..."
@@ -939,12 +915,6 @@ main() {
             9)
                 echo ""
                 install_security_tools
-                echo ""
-                read -p "Press Enter to continue..."
-                ;;
-            10)
-                echo ""
-                install_vscode
                 echo ""
                 read -p "Press Enter to continue..."
                 ;;
