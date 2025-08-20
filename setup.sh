@@ -561,6 +561,7 @@ install_network_tools() {
         "wireshark"
         "minicom"
         "sipcalc"
+        "bandwhich"
     )
     
     local failed_tools=()
@@ -617,6 +618,9 @@ install_utility_tools() {
         "watch"
         "p7zip"
         "coreutils"
+        "fzf"
+        "tldr"
+        "bat"
     )
     
     local cask_tools=(
