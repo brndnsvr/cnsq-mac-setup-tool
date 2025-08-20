@@ -485,6 +485,7 @@ install_dev_tools() {
         "python@3"
         "ansible"
         "expect"
+        "node"
     )
     
     local cask_tools=(
