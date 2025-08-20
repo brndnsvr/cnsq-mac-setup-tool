@@ -93,6 +93,26 @@ check_sudo_active() {
     sudo -n true 2>/dev/null
 }
 
+check_dev_tools_installed() {
+    # Check if key development tools are installed
+    command -v git &>/dev/null && command -v nvim &>/dev/null && command -v python3 &>/dev/null
+}
+
+check_network_tools_installed() {
+    # Check if key network tools are installed
+    command -v nmap &>/dev/null && command -v mtr &>/dev/null
+}
+
+check_utility_tools_installed() {
+    # Check if key utility tools are installed
+    command -v jq &>/dev/null && command -v rg &>/dev/null
+}
+
+check_security_tools_installed() {
+    # Check if key security tools are installed
+    command -v ssh-audit &>/dev/null && command -v pwgen &>/dev/null
+}
+
 # Initialize completion status based on actual installations
 initialize_completion_status() {
     local updated=false
@@ -136,13 +156,17 @@ show_menu() {
     echo ""
     
     # Task definitions
-    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo")
+    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo" "dev_tools" "network_tools" "utility_tools" "security_tools")
     local task_names=(
         "Install Xcode Command Line Tools"
         "Install Homebrew Package Manager"
         "Configure Homebrew in Shell"
         "Install iTerm2 Terminal"
         "Verify Administrator Access"
+        "Install Development Tools (git, neovim, python, etc.)"
+        "Install Network Tools (nmap, wireshark, mtr, etc.)"
+        "Install Utility Tools (jq, ripgrep, tree, etc.)"
+        "Install Security Tools (ssh-audit, pwgen, etc.)"
     )
     local check_functions=(
         "check_xcode_installed"
@@ -150,6 +174,10 @@ show_menu() {
         "check_homebrew_path_configured"
         "check_iterm2_installed"
         "check_sudo_active"  # Check if sudo is currently active in session
+        "check_dev_tools_installed"
+        "check_network_tools_installed"
+        "check_utility_tools_installed"
+        "check_security_tools_installed"
     )
     
     local num=1
@@ -193,7 +221,7 @@ show_menu() {
     echo "  R. Reset All Tasks"
     echo "  Q. Quit"
     echo ""
-    echo -n "Enter your choice (1-5, A, R, or Q): "
+    echo -n "Enter your choice (1-9, A, R, or Q): "
 }
 
 # Verify sudo access
@@ -433,6 +461,217 @@ EOF
     fi
 }
 
+# Install Development Tools
+install_dev_tools() {
+    print_info "Installing Development Tools..."
+    
+    # Ensure brew is available
+    if ! command -v brew &>/dev/null; then
+        print_error "Homebrew is not available. Please install Homebrew first."
+        return 1
+    fi
+    
+    local tools=(
+        "git"
+        "neovim"
+        "tmux"
+        "python@3"
+        "ansible"
+        "expect"
+    )
+    
+    local failed_tools=()
+    
+    for tool in "${tools[@]}"; do
+        print_info "Installing $tool..."
+        if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
+            print_success "$tool installed"
+        else
+            print_warning "$tool may already be installed or failed"
+            failed_tools+=("$tool")
+        fi
+    done
+    
+    # Install Python packages
+    print_info "Setting up Python environment..."
+    if command -v python3 &>/dev/null; then
+        python3 -m pip install --upgrade pip 2>/dev/null || true
+        print_success "Python environment configured"
+    fi
+    
+    if [ ${#failed_tools[@]} -eq 0 ]; then
+        mark_complete "dev_tools"
+        print_success "All development tools installed successfully"
+        return 0
+    else
+        print_warning "Some tools may have had issues: ${failed_tools[*]}"
+        mark_complete "dev_tools"
+        return 0
+    fi
+}
+
+# Install Network Tools
+install_network_tools() {
+    print_info "Installing Network Tools..."
+    
+    # Ensure brew is available
+    if ! command -v brew &>/dev/null; then
+        print_error "Homebrew is not available. Please install Homebrew first."
+        return 1
+    fi
+    
+    local tools=(
+        "nmap"
+        "netcat"
+        "telnet"
+        "gping"
+        "mtr"
+        "fping"
+        "iperf3"
+        "whois"
+        "arp-scan"
+        "ngrep"
+        "wireshark"
+        "minicom"
+        "sipcalc"
+    )
+    
+    local failed_tools=()
+    
+    for tool in "${tools[@]}"; do
+        print_info "Installing $tool..."
+        if [[ "$tool" == "wireshark" ]]; then
+            # Wireshark is a cask
+            if brew install --cask "$tool" 2>/dev/null || brew upgrade --cask "$tool" 2>/dev/null; then
+                print_success "$tool installed"
+            else
+                print_warning "$tool may already be installed or failed"
+                failed_tools+=("$tool")
+            fi
+        else
+            if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
+                print_success "$tool installed"
+            else
+                print_warning "$tool may already be installed or failed"
+                failed_tools+=("$tool")
+            fi
+        fi
+    done
+    
+    if [ ${#failed_tools[@]} -eq 0 ]; then
+        mark_complete "network_tools"
+        print_success "All network tools installed successfully"
+        return 0
+    else
+        print_warning "Some tools may have had issues: ${failed_tools[*]}"
+        mark_complete "network_tools"
+        return 0
+    fi
+}
+
+# Install Utility Tools
+install_utility_tools() {
+    print_info "Installing Utility Tools..."
+    
+    # Ensure brew is available
+    if ! command -v brew &>/dev/null; then
+        print_error "Homebrew is not available. Please install Homebrew first."
+        return 1
+    fi
+    
+    local tools=(
+        "jq"
+        "ripgrep"
+        "tree"
+        "eza"
+        "zsh-syntax-highlighting"
+        "wget"
+        "curl"
+        "watch"
+        "p7zip"
+        "unrar"
+        "coreutils"
+    )
+    
+    local failed_tools=()
+    
+    for tool in "${tools[@]}"; do
+        print_info "Installing $tool..."
+        if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
+            print_success "$tool installed"
+        else
+            print_warning "$tool may already be installed or failed"
+            failed_tools+=("$tool")
+        fi
+    done
+    
+    # Setup zsh-syntax-highlighting if installed
+    if [[ -d "/opt/homebrew/share/zsh-syntax-highlighting" ]] || [[ -d "/usr/local/share/zsh-syntax-highlighting" ]]; then
+        local zsh_highlight_path=""
+        if [[ -d "/opt/homebrew/share/zsh-syntax-highlighting" ]]; then
+            zsh_highlight_path="/opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+        else
+            zsh_highlight_path="/usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+        fi
+        
+        if ! grep -q "zsh-syntax-highlighting.zsh" "$HOME/.zshrc" 2>/dev/null; then
+            echo "" >> "$HOME/.zshrc"
+            echo "# Zsh syntax highlighting" >> "$HOME/.zshrc"
+            echo "source $zsh_highlight_path" >> "$HOME/.zshrc"
+            print_success "Configured zsh-syntax-highlighting"
+        fi
+    fi
+    
+    if [ ${#failed_tools[@]} -eq 0 ]; then
+        mark_complete "utility_tools"
+        print_success "All utility tools installed successfully"
+        return 0
+    else
+        print_warning "Some tools may have had issues: ${failed_tools[*]}"
+        mark_complete "utility_tools"
+        return 0
+    fi
+}
+
+# Install Security Tools
+install_security_tools() {
+    print_info "Installing Security Tools..."
+    
+    # Ensure brew is available
+    if ! command -v brew &>/dev/null; then
+        print_error "Homebrew is not available. Please install Homebrew first."
+        return 1
+    fi
+    
+    local tools=(
+        "ssh-audit"
+        "ssh-copy-id"
+        "pwgen"
+    )
+    
+    local failed_tools=()
+    
+    for tool in "${tools[@]}"; do
+        print_info "Installing $tool..."
+        if brew install "$tool" 2>/dev/null || brew upgrade "$tool" 2>/dev/null; then
+            print_success "$tool installed"
+        else
+            print_warning "$tool may already be installed or failed"
+            failed_tools+=("$tool")
+        fi
+    done
+    
+    if [ ${#failed_tools[@]} -eq 0 ]; then
+        mark_complete "security_tools"
+        print_success "All security tools installed successfully"
+        return 0
+    else
+        print_warning "Some tools may have had issues: ${failed_tools[*]}"
+        mark_complete "security_tools"
+        return 0
+    fi
+}
+
 # Run all pending tasks
 run_all_tasks() {
     local tasks_run=false
@@ -478,6 +717,38 @@ run_all_tasks() {
     if ! is_complete "iterm2"; then
         echo ""
         install_iterm2
+        tasks_run=true
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
+    
+    if ! is_complete "dev_tools"; then
+        echo ""
+        install_dev_tools
+        tasks_run=true
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
+    
+    if ! is_complete "network_tools"; then
+        echo ""
+        install_network_tools
+        tasks_run=true
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
+    
+    if ! is_complete "utility_tools"; then
+        echo ""
+        install_utility_tools
+        tasks_run=true
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
+    
+    if ! is_complete "security_tools"; then
+        echo ""
+        install_security_tools
         tasks_run=true
         echo ""
         read -p "Press Enter to continue..."
@@ -579,6 +850,30 @@ main() {
             5)
                 echo ""
                 verify_sudo_access  # Don't mark as complete - it's per-session
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            6)
+                echo ""
+                install_dev_tools
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            7)
+                echo ""
+                install_network_tools
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            8)
+                echo ""
+                install_utility_tools
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            9)
+                echo ""
+                install_security_tools
                 echo ""
                 read -p "Press Enter to continue..."
                 ;;
