@@ -88,6 +88,11 @@ check_iterm2_installed() {
     [[ -d "/Applications/iTerm.app" ]]
 }
 
+check_sudo_active() {
+    # Check if sudo is currently cached/active in this session
+    sudo -n true 2>/dev/null
+}
+
 # Initialize completion status based on actual installations
 initialize_completion_status() {
     local updated=false
@@ -144,7 +149,7 @@ show_menu() {
         "check_homebrew_installed"
         "check_homebrew_path_configured"
         "check_iterm2_installed"
-        "false"  # sudo doesn't have a permanent install check
+        "check_sudo_active"  # Check if sudo is currently active in session
     )
     
     local num=1
@@ -152,20 +157,31 @@ show_menu() {
     for task_id in "${task_ids[@]}"; do
         local check_func="${check_functions[$i]}"
         
-        # Check if actually installed vs just marked complete
-        if $check_func; then
-            # Actually installed (regardless of tracking)
-            echo -e "  ${GREEN}✓${NC} ${DIM}$num. ${task_names[$i]}${NC}"
-            # Silently mark as complete if not already
-            if ! is_complete "$task_id"; then
-                mark_complete "$task_id"
+        # Special handling for sudo (task 5)
+        if [[ "$task_id" == "sudo" ]]; then
+            if check_sudo_active; then
+                # Sudo is currently active in this session
+                echo -e "  ${GREEN}✓${NC} ${DIM}$num. ${task_names[$i]} (session active)${NC}"
+            else
+                # Sudo not active
+                echo -e "  ${YELLOW}○${NC} $num. ${task_names[$i]}"
             fi
-        elif is_complete "$task_id"; then
-            # Marked complete but not actually installed (shouldn't happen)
-            echo -e "  ${YELLOW}⚠${NC}  $num. ${task_names[$i]} ${DIM}(needs reinstall)${NC}"
         else
-            # Not installed and not marked
-            echo -e "  ${YELLOW}○${NC} $num. ${task_names[$i]}"
+            # Regular tasks (installations)
+            if $check_func; then
+                # Actually installed (regardless of tracking)
+                echo -e "  ${GREEN}✓${NC} ${DIM}$num. ${task_names[$i]}${NC}"
+                # Silently mark as complete if not already
+                if ! is_complete "$task_id"; then
+                    mark_complete "$task_id"
+                fi
+            elif is_complete "$task_id"; then
+                # Marked complete but not actually installed (shouldn't happen)
+                echo -e "  ${YELLOW}⚠${NC}  $num. ${task_names[$i]} ${DIM}(needs reinstall)${NC}"
+            else
+                # Not installed and not marked
+                echo -e "  ${YELLOW}○${NC} $num. ${task_names[$i]}"
+            fi
         fi
         ((num++))
         ((i++))
@@ -430,7 +446,7 @@ run_all_tasks() {
             read -p "Press Enter to continue..."
             return 1
         fi
-        mark_complete "sudo"
+        # Don't mark sudo as complete - it's per-session only
         tasks_run=true
         echo ""
     fi
@@ -562,7 +578,7 @@ main() {
                 ;;
             5)
                 echo ""
-                verify_sudo_access && mark_complete "sudo"
+                verify_sudo_access  # Don't mark as complete - it's per-session
                 echo ""
                 read -p "Press Enter to continue..."
                 ;;
