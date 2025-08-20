@@ -268,17 +268,19 @@ install_homebrew() {
         return 0
     fi
     
-    # Ensure we have sudo access first
-    print_info "Homebrew installation requires administrator privileges"
+    # Ensure we have sudo access cached (but don't run installer with sudo)
+    print_info "Homebrew installer needs administrator privileges"
+    print_warning "You'll be prompted for your password to cache admin access"
     if ! verify_sudo_access; then
         print_error "Cannot install Homebrew without administrator access"
         return 1
     fi
     
-    print_warning "Homebrew installation will begin"
+    print_info "Starting Homebrew installation (this may take a few minutes)..."
     echo ""
     
     # Create a temporary script for unattended installation
+    # NOTE: We do NOT run this with sudo - Homebrew refuses to run as root
     cat > /tmp/brew_install.sh << 'EOF'
 #!/bin/bash
 export NONINTERACTIVE=1
@@ -287,8 +289,8 @@ EOF
     
     chmod +x /tmp/brew_install.sh
     
-    # Run the installation with sudo available
-    if sudo /tmp/brew_install.sh; then
+    # Run the installation as regular user (sudo is cached for when installer needs it)
+    if /tmp/brew_install.sh; then
         print_success "Homebrew installed successfully"
         mark_complete "homebrew"
         rm -f /tmp/brew_install.sh
