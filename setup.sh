@@ -268,8 +268,14 @@ install_homebrew() {
         return 0
     fi
     
+    # Ensure we have sudo access first
+    print_info "Homebrew installation requires administrator privileges"
+    if ! verify_sudo_access; then
+        print_error "Cannot install Homebrew without administrator access"
+        return 1
+    fi
+    
     print_warning "Homebrew installation will begin"
-    echo "    You may need to enter your password"
     echo ""
     
     # Create a temporary script for unattended installation
@@ -281,8 +287,8 @@ EOF
     
     chmod +x /tmp/brew_install.sh
     
-    # Run the installation
-    if /tmp/brew_install.sh; then
+    # Run the installation with sudo available
+    if sudo /tmp/brew_install.sh; then
         print_success "Homebrew installed successfully"
         mark_complete "homebrew"
         rm -f /tmp/brew_install.sh
@@ -364,6 +370,13 @@ install_iterm2() {
         fi
     fi
     
+    # Ensure we have sudo access for cask installation
+    print_info "iTerm2 installation may require administrator privileges"
+    if ! verify_sudo_access; then
+        print_error "Cannot install iTerm2 without administrator access"
+        return 1
+    fi
+    
     print_info "Installing iTerm2 via Homebrew..."
     if brew install --cask iterm2; then
         print_success "iTerm2 installed successfully"
@@ -406,12 +419,18 @@ EOF
 run_all_tasks() {
     local tasks_run=false
     
-    if ! is_complete "sudo"; then
+    # Get sudo access upfront for all tasks
+    if ! is_complete "homebrew" || ! is_complete "iterm2"; then
         echo ""
-        verify_sudo_access && mark_complete "sudo"
+        print_info "Some tasks require administrator privileges"
+        if ! verify_sudo_access; then
+            print_error "Cannot continue without administrator access"
+            read -p "Press Enter to continue..."
+            return 1
+        fi
+        mark_complete "sudo"
         tasks_run=true
         echo ""
-        read -p "Press Enter to continue..."
     fi
     
     if ! is_complete "xcode"; then
