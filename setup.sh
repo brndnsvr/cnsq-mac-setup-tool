@@ -113,6 +113,11 @@ check_security_tools_installed() {
     command -v ssh-audit &>/dev/null && command -v pwgen &>/dev/null
 }
 
+check_zsh_config_installed() {
+    # Check if zsh configuration files exist
+    [[ -f "$HOME/.zsh/aliases.zsh" ]] && [[ -f "$HOME/.zsh/functions.zsh" ]]
+}
+
 # Initialize completion status based on actual installations
 initialize_completion_status() {
     local updated=false
@@ -156,7 +161,7 @@ show_menu() {
     echo ""
     
     # Task definitions
-    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo" "dev_tools" "network_tools" "utility_tools" "security_tools")
+    local task_ids=("xcode" "homebrew" "homebrew_path" "iterm2" "sudo" "dev_tools" "network_tools" "utility_tools" "security_tools" "zsh_config")
     local task_names=(
         "Install Xcode Command Line Tools"
         "Install Homebrew Package Manager"
@@ -167,6 +172,7 @@ show_menu() {
         "Install Network Tools (nmap, wireshark, mtr, etc.)"
         "Install Utility Tools (jq, ripgrep, AppCleaner, etc.)"
         "Install Security Tools (ssh-audit, pwgen, etc.)"
+        "Configure Zsh (eza/nvim aliases & functions)"
     )
     local check_functions=(
         "check_xcode_installed"
@@ -178,6 +184,7 @@ show_menu() {
         "check_network_tools_installed"
         "check_utility_tools_installed"
         "check_security_tools_installed"
+        "check_zsh_config_installed"
     )
     
     local num=1
@@ -221,7 +228,7 @@ show_menu() {
     echo "  R. Reset All Tasks"
     echo "  Q. Quit"
     echo ""
-    echo -n "Enter your choice (1-9, A, R, or Q): "
+    echo -n "Enter your choice (1-10, A, R, or Q): "
 }
 
 # Verify sudo access
@@ -717,6 +724,159 @@ install_security_tools() {
     fi
 }
 
+# Setup Zsh configuration for eza and nvim
+setup_zsh_config() {
+    print_info "Setting up Zsh configuration for eza and nvim..."
+    
+    # Create ~/.zsh directory if it doesn't exist
+    if [[ ! -d "$HOME/.zsh" ]]; then
+        mkdir -p "$HOME/.zsh"
+        print_success "Created ~/.zsh directory"
+    fi
+    
+    # Create ~/.zsh/aliases.zsh
+    print_info "Creating ~/.zsh/aliases.zsh..."
+    cat > "$HOME/.zsh/aliases.zsh" << 'EOF'
+# Enhanced eza aliases
+alias ls='eza --icons --group-directories-first'
+alias ll='eza -l --icons --group-directories-first --header'
+alias la='eza -la --icons --group-directories-first --header'
+alias lt='eza --tree --icons --level=2'
+alias lsd='eza -lD --icons'  # Directories only
+alias lsf='eza -lf --icons --color=always | grep -v /'  # Files only
+alias lsize='eza -l --icons --sort=size --reverse'
+alias ltime='eza -l --icons --sort=modified --reverse'
+alias lg='eza -la --git --icons --group-directories-first'
+
+# Neovim aliases
+alias v='nvim'
+alias vi='nvim'
+alias vim='nvim'
+alias nv='nvim'
+alias nvt='nvim -p'  # Open in tabs
+alias view='nvim -R'  # Read-only mode
+
+# Quick config editing
+alias nvimrc='nvim ~/.config/nvim/init.vim'
+alias zshrc='nvim ~/.zshrc'
+alias bashrc='nvim ~/.bashrc'
+EOF
+    print_success "Created ~/.zsh/aliases.zsh"
+    
+    # Create ~/.zsh/functions.zsh
+    print_info "Creating ~/.zsh/functions.zsh..."
+    cat > "$HOME/.zsh/functions.zsh" << 'EOF'
+# Fuzzy find and edit files with fzf + eza preview
+vf() {
+    local file
+    file=$(eza -a --icons --color=always | fzf --ansi --preview 'if [[ -f {} ]]; then bat --color=always {}; else eza -la --icons --color=always {}; fi' --preview-window=right:60%)
+    [[ -n "$file" ]] && nvim "$file"
+}
+
+# Fuzzy find from home directory
+vfh() {
+    local file
+    cd ~
+    file=$(eza -a --icons --color=always | fzf --ansi --preview 'if [[ -f {} ]]; then bat --color=always {}; else eza -la --icons --color=always {}; fi' --preview-window=right:60%)
+    [[ -n "$file" ]] && nvim "$file"
+    cd - > /dev/null
+}
+
+# Create directories if needed and edit file
+nvedit() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: nvedit <file_path>"
+        return 1
+    fi
+    
+    local file_path="$1"
+    local dir_path=$(dirname "$file_path")
+    
+    if [[ ! -d "$dir_path" ]]; then
+        mkdir -p "$dir_path"
+        echo "Created directory: $dir_path"
+    fi
+    
+    nvim "$file_path"
+}
+
+# Neovim session management
+nvs() {
+    local session_dir="$HOME/.local/share/nvim/sessions"
+    mkdir -p "$session_dir"
+    
+    if [[ $# -eq 0 ]]; then
+        # List sessions
+        echo "Available sessions:"
+        ls -1 "$session_dir" | sed 's/\.vim$//'
+    elif [[ "$1" == "save" ]]; then
+        # Save session
+        local session_name="${2:-default}"
+        nvim -c "mksession! $session_dir/$session_name.vim" -c "qa"
+        echo "Session saved: $session_name"
+    elif [[ "$1" == "load" ]]; then
+        # Load session
+        local session_name="${2:-default}"
+        if [[ -f "$session_dir/$session_name.vim" ]]; then
+            nvim -S "$session_dir/$session_name.vim"
+        else
+            echo "Session not found: $session_name"
+        fi
+    else
+        echo "Usage: nvs [save|load] [session_name]"
+    fi
+}
+
+# List files with eza and pick one to edit
+lv() {
+    local file
+    file=$(eza -la --icons --color=always | fzf --ansi --header-lines=1 | awk '{print $NF}')
+    [[ -n "$file" ]] && nvim "$file"
+}
+
+# Tree view and pick file to edit
+tv() {
+    local file
+    file=$(eza --tree --icons --color=always --level=3 | fzf --ansi | sed 's/^[│├└─ ]*//g')
+    [[ -n "$file" ]] && nvim "$file"
+}
+EOF
+    print_success "Created ~/.zsh/functions.zsh"
+    
+    # Update ~/.zshrc to source ~/.zsh/*.zsh files
+    print_info "Updating ~/.zshrc to source ~/.zsh/*.zsh files..."
+    
+    # Check if the sourcing line already exists
+    if ! grep -q "for config_file in ~/.zsh/\*.zsh" "$HOME/.zshrc" 2>/dev/null; then
+        # Create a temp file with the new content at the top
+        local temp_zshrc="/tmp/zshrc_temp_$$"
+        
+        # Add the new sourcing block at the beginning
+        cat > "$temp_zshrc" << 'EOF'
+# Load all zsh configuration files from ~/.zsh/
+for config_file in ~/.zsh/*.zsh; do
+    [[ -f "$config_file" ]] && source "$config_file"
+done
+
+EOF
+        
+        # Append existing .zshrc content if it exists
+        if [[ -f "$HOME/.zshrc" ]]; then
+            cat "$HOME/.zshrc" >> "$temp_zshrc"
+        fi
+        
+        # Move temp file to .zshrc
+        mv "$temp_zshrc" "$HOME/.zshrc"
+        print_success "Updated ~/.zshrc to source ~/.zsh/*.zsh files"
+    else
+        print_success "~/.zshrc already sources ~/.zsh/*.zsh files"
+    fi
+    
+    mark_complete "zsh_config"
+    print_success "Zsh configuration for eza and nvim completed"
+    return 0
+}
+
 # Run all pending tasks
 run_all_tasks() {
     local tasks_run=false
@@ -794,6 +954,14 @@ run_all_tasks() {
     if ! is_complete "security_tools"; then
         echo ""
         install_security_tools
+        tasks_run=true
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
+    
+    if ! is_complete "zsh_config"; then
+        echo ""
+        setup_zsh_config
         tasks_run=true
         echo ""
         read -p "Press Enter to continue..."
@@ -919,6 +1087,12 @@ main() {
             9)
                 echo ""
                 install_security_tools
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            10)
+                echo ""
+                setup_zsh_config
                 echo ""
                 read -p "Press Enter to continue..."
                 ;;
