@@ -632,6 +632,7 @@ install_utility_tools() {
     
     local cask_tools=(
         "appcleaner"
+        "ghostty"
     )
     
     local failed_tools=()
